@@ -8,11 +8,11 @@
     "test": "jasmine-node --coffee spec"
   },
   "dependencies": {
-    "mori": "latest"
+    "mori": "0.2.4"
   },
   "devDependencies": {
-    "coffee-script": "latest",
-    "jasmine-node": "latest",
-    "claire": "latest"
+    "coffee-script": "1.6.3",
+    "jasmine-node": "1.11.0",
+    "claire": "0.4.1"
   }
 }
