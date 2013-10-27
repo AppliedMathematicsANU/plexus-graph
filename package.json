@@ -2,10 +2,10 @@
   "name": "plexus-graph",
   "version": "0.0.1",
   "private": true,
-  "files": "lib",
+  "main": "./graph.js",
   "scripts": {
-    "build": "coffee --bare --compile --output lib src/*.coffee",
-    "prepublish": "coffee --bare --compile --output lib src/*.coffee",
+    "build": "coffee --bare --compile --output . src/*.coffee",
+    "prepublish": "coffee --bare --compile --output . src/*.coffee",
     "test": "jasmine-node --coffee spec"
   },
   "dependencies": {
