@@ -2,6 +2,7 @@
   "name": "plexus-graph",
   "version": "0.0.1",
   "private": true,
+  "files": "lib",
   "scripts": {
     "build": "coffee --bare --compile --output lib src/*.coffee",
     "prepublish": "coffee --bare --compile --output lib src/*.coffee",
