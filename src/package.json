@@ -1,0 +1,18 @@
+{
+  "name": "plexus-lib",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "coffee --bare --compile --output lib src/*.coffee",
+    "prepublish": "coffee --bare --compile --output lib src/*.coffee",
+    "test": "jasmine-node --coffee spec"
+  },
+  "dependencies": {
+    "mori": "latest"
+  },
+  "devDependencies": {
+    "coffee-script": "latest",
+    "jasmine-node": "latest",
+    "claire": "latest"
+  }
+}
