@@ -12,6 +12,7 @@ All functions return an array of vertices.
 _ = require 'mori'
 x = require './mori-utils'
 t = require './traversal'
+graph = require './PersistentGraph'
 
 
 topsort = (succ, sources) ->
@@ -33,30 +34,6 @@ topsort = (succ, sources) ->
 
   order = _.reduce(visit, [_.list(), _.hash_map()], sources)[0]
   _.into_array(order) if order?
-
-
-bottlenecks = (succ, sources) ->
-  ###
-  Computes the bottlenecks of a finite directed graph. A bottleneck is a
-  vertex `v` such that no descendant of `v` can be reached from any source
-  vertex by a directed path that does not pass through `v`.
-
-  Arguments are the successor function `succ` for the graph and the list
-  `sources` of source vertices. Results may not be as expected if vertices
-  listed in `sources` are descendants of each other.
-  ###
-  edges    = t.forest(t.dfs, succ, sources)
-  vertices = _.map(x.second, edges)
-
-  succx = (v) ->
-    (w) -> if _.equals(v, w) then _.set() else _.disj(_.set(succ(w)), v)
-
-  good = (v) ->
-    descendants = t.dfs(succ, succ(v))
-    reachable = t.dfs(succx(v), sources)
-    x.isEmpty(_.intersection(_.set(descendants), _.set(reachable)))
-
-  _.into_array(_.filter(good, vertices))
 
 
 articulationPoints = (adj, seeds) ->
@@ -95,6 +72,35 @@ articulationPoints = (adj, seeds) ->
       x.any(test, adj(v))
 
   _.into_array(_.filter(good, vertices))
+
+
+bottlenecks = (succ, sources) ->
+  ###
+  Computes the bottlenecks of a finite directed graph. A bottleneck is a
+  vertex `v` such that no descendant of `v` can be reached from any source
+  vertex by a directed path that does not pass through `v`.
+
+  Arguments are the successor function `succ` for the graph and the list
+  `sources` of source vertices. Results may not be as expected if vertices
+  listed in `sources` are descendants of each other.
+  ###
+  edges = t.forest(t.dfs, succ, sources)
+  goodEdges = _.filter((([v,w]) -> v != null), _.map(_.into_array, edges))
+  G = graph(goodEdges, sources)
+
+  ends = _.filter(((v) -> G.isSource(v) or G.isSink(v)), G.vertices())
+  links = articulationPoints(((v) -> G.adjacent(v)), G.vertices())
+  candidates = _.set(_.concat(links, ends))
+
+  succx = (v) ->
+    (w) -> if _.equals(v, w) then _.set() else _.disj(_.set(succ(w)), v)
+
+  good = (v) ->
+    descendants = t.dfs(succ, succ(v))
+    reachable = t.dfs(succx(v), sources)
+    x.isEmpty(_.intersection(_.set(descendants), _.set(reachable)))
+
+  _.into_array(_.filter(good, candidates))
 
 
 module.exports =

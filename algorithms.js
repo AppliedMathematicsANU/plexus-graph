@@ -10,13 +10,15 @@ functions.
 All functions return an array of vertices.
 */
 
-var articulationPoints, bottlenecks, t, topsort, x, _;
+var articulationPoints, bottlenecks, graph, t, topsort, x, _;
 
 _ = require('mori');
 
 x = require('./mori-utils');
 
 t = require('./traversal');
+
+graph = require('./PersistentGraph');
 
 topsort = function(succ, sources) {
   /*
@@ -44,38 +46,6 @@ topsort = function(succ, sources) {
   if (order != null) {
     return _.into_array(order);
   }
-};
-
-bottlenecks = function(succ, sources) {
-  /*
-  Computes the bottlenecks of a finite directed graph. A bottleneck is a
-  vertex `v` such that no descendant of `v` can be reached from any source
-  vertex by a directed path that does not pass through `v`.
-  
-  Arguments are the successor function `succ` for the graph and the list
-  `sources` of source vertices. Results may not be as expected if vertices
-  listed in `sources` are descendants of each other.
-  */
-
-  var edges, good, succx, vertices;
-  edges = t.forest(t.dfs, succ, sources);
-  vertices = _.map(x.second, edges);
-  succx = function(v) {
-    return function(w) {
-      if (_.equals(v, w)) {
-        return _.set();
-      } else {
-        return _.disj(_.set(succ(w)), v);
-      }
-    };
-  };
-  good = function(v) {
-    var descendants, reachable;
-    descendants = t.dfs(succ, succ(v));
-    reachable = t.dfs(succx(v), sources);
-    return x.isEmpty(_.intersection(_.set(descendants), _.set(reachable)));
-  };
-  return _.into_array(_.filter(good, vertices));
 };
 
 articulationPoints = function(adj, seeds) {
@@ -121,6 +91,50 @@ articulationPoints = function(adj, seeds) {
     }
   };
   return _.into_array(_.filter(good, vertices));
+};
+
+bottlenecks = function(succ, sources) {
+  /*
+  Computes the bottlenecks of a finite directed graph. A bottleneck is a
+  vertex `v` such that no descendant of `v` can be reached from any source
+  vertex by a directed path that does not pass through `v`.
+  
+  Arguments are the successor function `succ` for the graph and the list
+  `sources` of source vertices. Results may not be as expected if vertices
+  listed in `sources` are descendants of each other.
+  */
+
+  var G, candidates, edges, ends, good, goodEdges, links, succx;
+  edges = t.forest(t.dfs, succ, sources);
+  goodEdges = _.filter((function(_arg) {
+    var v, w;
+    v = _arg[0], w = _arg[1];
+    return v !== null;
+  }), _.map(_.into_array, edges));
+  G = graph(goodEdges, sources);
+  ends = _.filter((function(v) {
+    return G.isSource(v) || G.isSink(v);
+  }), G.vertices());
+  links = articulationPoints((function(v) {
+    return G.adjacent(v);
+  }), G.vertices());
+  candidates = _.set(_.concat(links, ends));
+  succx = function(v) {
+    return function(w) {
+      if (_.equals(v, w)) {
+        return _.set();
+      } else {
+        return _.disj(_.set(succ(w)), v);
+      }
+    };
+  };
+  good = function(v) {
+    var descendants, reachable;
+    descendants = t.dfs(succ, succ(v));
+    reachable = t.dfs(succx(v), sources);
+    return x.isEmpty(_.intersection(_.set(descendants), _.set(reachable)));
+  };
+  return _.into_array(_.filter(good, candidates));
 };
 
 module.exports = {
