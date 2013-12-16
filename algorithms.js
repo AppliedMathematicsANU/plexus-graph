@@ -104,37 +104,24 @@ bottlenecks = function(succ, sources) {
   listed in `sources` are descendants of each other.
   */
 
-  var G, candidates, edges, ends, good, goodEdges, links, succx;
-  edges = t.forest(t.dfs, succ, sources);
-  goodEdges = _.filter((function(_arg) {
-    var v, w;
-    v = _arg[0], w = _arg[1];
-    return v !== null;
-  }), _.map(_.into_array, edges));
-  G = graph(goodEdges, sources);
-  ends = _.filter((function(v) {
-    return G.isSource(v) || G.isSink(v);
-  }), G.vertices());
-  links = articulationPoints((function(v) {
-    return G.adjacent(v);
-  }), G.vertices());
-  candidates = _.set(_.concat(links, ends));
-  succx = function(v) {
-    return function(w) {
-      if (_.equals(v, w)) {
-        return _.set();
-      } else {
-        return _.disj(_.set(succ(w)), v);
-      }
-    };
-  };
+  var G, edges, good;
+  edges = t.byEdges(t.dfs, succ, sources);
+  G = graph(_.map(_.into_array, edges)).withoutVertices([null]);
   good = function(v) {
-    var descendants, reachable;
-    descendants = t.dfs(succ, succ(v));
-    reachable = t.dfs(succx(v), sources);
-    return x.isEmpty(_.intersection(_.set(descendants), _.set(reachable)));
+    var inside, seen;
+    seen = _.set(t.dfs(succ, [v]));
+    inside = _.partial(_.has_key, seen);
+    return x.all((function(w) {
+      var back;
+      back = G.predecessors(w);
+      if (_.equals(v, w)) {
+        return !x.any(inside, back);
+      } else {
+        return x.all(inside, back);
+      }
+    }), seen);
   };
-  return _.into_array(_.filter(good, candidates));
+  return _.into_array(_.filter(good, G.vertices()));
 };
 
 module.exports = {
