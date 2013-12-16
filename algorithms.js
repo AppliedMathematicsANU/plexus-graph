@@ -115,7 +115,7 @@ bottlenecks = function(succ, sources) {
       var back;
       back = G.predecessors(w);
       if (_.equals(v, w)) {
-        return !x.any(inside, back);
+        return _.count(back) === 0 || !x.all(inside, back);
       } else {
         return x.all(inside, back);
       }

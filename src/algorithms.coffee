@@ -94,7 +94,7 @@ bottlenecks = (succ, sources) ->
     x.all(((w) ->
       back = G.predecessors(w)
       if _.equals(v, w)
-        not x.any(inside, back)
+        _.count(back) == 0 or not x.all(inside, back)
       else
         x.all(inside, back)),
       seen)
