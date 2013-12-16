@@ -84,23 +84,35 @@ bottlenecks = (succ, sources) ->
   `sources` of source vertices. Results may not be as expected if vertices
   listed in `sources` are descendants of each other.
   ###
-  edges = t.forest(t.dfs, succ, sources)
-  goodEdges = _.filter((([v,w]) -> v != null), _.map(_.into_array, edges))
-  G = graph(goodEdges, sources)
+  edges = t.byEdges(t.dfs, succ, sources)
+  G = graph(_.map(_.into_array, edges)).withoutVertices([null])
+  console.log(JSON.stringify(G))
 
-  ends = _.filter(((v) -> G.isSource(v) or G.isSink(v)), G.vertices())
-  links = articulationPoints(((v) -> G.adjacent(v)), G.vertices())
-  candidates = _.set(_.concat(links, ends))
-
-  succx = (v) ->
-    (w) -> if _.equals(v, w) then _.set() else _.disj(_.set(succ(w)), v)
+  pred = (v) -> G.predecessors(v)
 
   good = (v) ->
-    descendants = t.dfs(succ, succ(v))
-    reachable = t.dfs(succx(v), sources)
-    x.isEmpty(_.intersection(_.set(descendants), _.set(reachable)))
+    seen = _.set(t.dfs(succ, [v]))
+    console.log(v + '->' + seen)
+    x.all(((w) ->
+      console.log('  ' + w + '->' + pred(w) + ' ' + _.equals(v, w))
+      _.equals(v, w) or x.all(((u) -> _.has_key(seen, u)), pred(w))),
+      seen)
 
-  _.into_array(_.filter(good, candidates))
+  _.into_array(_.filter(good, G.vertices()))
+
+  # ends = _.filter(((v) -> G.isSource(v) or G.isSink(v)), G.vertices())
+  # links = articulationPoints(((v) -> G.adjacent(v)), G.vertices())
+  # candidates = _.set(_.concat(links, ends))
+
+  # succx = (v) ->
+  #   (w) -> if _.equals(v, w) then _.set() else _.disj(_.set(succ(w)), v)
+
+  # good = (v) ->
+  #   descendants = t.dfs(succ, succ(v))
+  #   reachable = t.dfs(succx(v), sources)
+  #   x.isEmpty(_.intersection(_.set(descendants), _.set(reachable)))
+
+  # _.into_array(_.filter(good, candidates))
 
 
 module.exports =
